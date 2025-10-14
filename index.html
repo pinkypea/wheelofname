@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wheel of Names</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #6b48ff, #00ddeb);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      header {
+        text-align: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      header img.logo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+      }
+
+      header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      header p {
+        font-size: 1.1rem;
+        font-weight: 300;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      #logo {
+        display: flex;
+      }
+      
+      #main-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        gap: 70px;
+        flex-wrap: wrap;
+      }
+
+      #wheel-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+
+      #main-content {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      canvas {
+        border-radius: 50%;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition: transform 0.3s;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      canvas:hover {
+        transform: scale(1.02);
+      }
+
+      #arrow {
+        position: absolute;
+        top: 50%;
+        left: calc(50% + 250px);
+        transform: translateY(-50%) rotate(180deg);
+        width: 0;
+        height: 0;
+        border-top: 30px solid transparent;
+        border-bottom: 30px solid transparent;
+        border-left: 50px solid #ff4d4d;
+        z-index: 10;
+        transition: border-left-color 0.2s;
+      }
+
+      #centerText {
+        position: absolute;
+        text-align: center;
+        font-weight: 600;
+        font-size: 24px;
+        color: #fff;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+      }
+
+      #panel {
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+      }
+
+      #panel h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #fff;
+      }
+
+      #names {
+        flex: 1;
+        resize: none;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        outline: none;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      #names::placeholder {
+        color: #ccc;
+      }
+
+      #spinBtn {
+        margin-top: 15px;
+        padding: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        border: none;
+        border-radius: 25px;
+        background: linear-gradient(90deg, #ff4d4d, #ff8c1a);
+        color: #fff;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      #spinBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      #winner {
+        position: absolute;
+        bottom: 10px;
+        font-size: 28px;
+        font-weight: 700;
+        color: #00ff85;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      footer {
+        text-align: center;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.2);
+        font-size: 0.9rem;
+        font-weight: 300;
+      }
+
+      footer a {
+        color: #00ddeb;
+        text-decoration: none;
+        margin: 0 10px;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        #main-container {
+          flex-direction: column;
+          padding: 10px;
+        }
+
+        #panel {
+          width: 100%;
+          max-width: 400px;
+        }
+
+        canvas {
+          width: 300px;
+          height: 300px;
+          
+        }
+
+        #arrow {
+          left: calc(50% + 150px);
+          border-top: 20px solid transparent;
+          border-bottom: 20px solid transparent;
+          border-left: 30px solid #ff4d4d;
+        }
+
+        #centerText {
+          font-size: 18px;
+        }
+
+        #winner {
+          font-size: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div id="logo">
+        <img src="./logo-dark-background-38.png" alt="Wheel of Names Logo" class="logo">
+      <h1>Wheel of Names</h1>
+      </div>
+      <p>Free and easy to use spinner. Enter names, spin wheel to pick a random winner.</p>
+    </header>
+    <div id="main-container">
+      <div id="wheel-container">
+        <div id="main-content">
+          <div id="arrow"></div>
+          <canvas id="wheel" width="500" height="500"></canvas>
+          <div id="centerText">Click to spin</div>
+          <div id="winner"></div>
+        </div>
+      </div>
+      <div id="panel">
+        <h3>Enter Names</h3>
+        <textarea id="names" placeholder="Enter one name per line">
+Dung
+Dương
+Đức
+</textarea>
+        <button id="spinBtn">Spin the Wheel</button>
+      </div>
+    </div>
+    <footer>
+      <p>© 2025 Wheel of Names | <a href="#">Privacy</a> | <a href="#">How It Works</a> | <a href="#">Contact</a></p>
+      <p>100% renewable energy servers</p>
+    </footer>
+
+    <script>
+      const canvas = document.getElementById("wheel");
+      const ctx = canvas.getContext("2d");
+      const namesInput = document.getElementById("names");
+      const winnerDiv = document.getElementById("winner");
+      const spinBtn = document.getElementById("spinBtn");
+      const centerText = document.getElementById("centerText");
+      const arrow = document.getElementById("arrow");
+
+      let names = [];
+      let startAngle = 5;
+      let arc = 0;
+      let spinAngle = 0;
+      let spinTime = 0;
+      let spinTimeTotal = 0;
+      let spinning = false;
+      let targetAngle = 0;
+      let lastTime = null;
+
+      function updateNames() {
+        names = namesInput.value
+          .split("\n")
+          .map((n) => n.trim())
+          .filter((n) => n);
+        if (names.length === 0) names = ["No Name"];
+        arc = (Math.PI * 2) / names.length;
+        drawWheel();
+      }
+
+      function randomColor(i) {
+        const hue = (i * 360) / names.length;
+        return `hsl(${hue}, 80%, 50%)`;
+      }
+
+      function drawWheel() {
+        ctx.clearRect(0, 0, 500, 500);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 3;
+        for (let i = 0; i < names.length; i++) {
+          const angle = startAngle + i * arc;
+          ctx.fillStyle = randomColor(i);
+          ctx.beginPath();
+          ctx.moveTo(250, 250);
+          ctx.arc(250, 250, 250, angle, angle + arc, false);
+          ctx.lineTo(250, 250);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.save();
+          ctx.translate(250, 250);
+          ctx.rotate(angle + arc / 2);
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 20px Montserrat";
+          ctx.textAlign = "right";
+          ctx.fillText(names[i], 230, 10);
+          ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.arc(250, 250, 40, 0, 2 * Math.PI);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+      }
+
+      function colorArrow() {
+        const degrees = ((startAngle * 180) / Math.PI) % 360;
+        const arcd = (arc * 180) / Math.PI;
+        let index = Math.floor(((360 - degrees) % 360) / arcd);
+        if (index < 0) index += names.length;
+        arrow.style.borderLeftColor = randomColor(index);
+      }
+
+      function rotateWheel(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const delta = timestamp - lastTime;
+        lastTime = timestamp;
+        spinTime += delta;
+
+        if (spinTime >= spinTimeTotal) {
+          startAngle = targetAngle % (2 * Math.PI);
+          drawWheel();
+          colorArrow();
+          stopRotateWheel();
+          lastTime = null;
+          return;
+        }
+
+        const t = spinTime / spinTimeTotal;
+        const easeOut = 1 - Math.pow(1 - t, 3);
+        startAngle = spinAngle + easeOut * (targetAngle - spinAngle);
+
+        drawWheel();
+        colorArrow();
+        requestAnimationFrame(rotateWheel);
+      }
+
+      function stopRotateWheel() {
+        spinning = false;
+        startAngle = targetAngle % (2 * Math.PI);
+        const winnerName = names[1]; // Always select the first name
+        winnerDiv.textContent = `🎉 Winner: ${winnerName}`;
+        centerText.textContent = "Click to spin";
+        drawWheel();
+        colorArrow();
+      }
+
+      function spin() {
+        if (spinning) return;
+        spinning = true;
+        winnerDiv.textContent = "";
+        centerText.textContent = "";
+        spinTime = 0;
+        lastTime = null;
+        spinTimeTotal = 6000; // Fixed spin duration for consistency
+        spinAngle = startAngle;
+
+        const index = 0; // Always stop at the first person
+        const arcCenter = arc / 2; // Center of the first segment (index 0)
+
+        // Arrow is at 0° (right side of the wheel)
+        const arrowAngle = 0;
+        const stopAt = arrowAngle - arcCenter;
+
+        // Rotate 4 full rotations plus the stop position
+        const fullRotations = Math.PI * 2 * 4;
+        targetAngle = startAngle + fullRotations + stopAt;
+
+        requestAnimationFrame(rotateWheel);
+      }
+
+      namesInput.addEventListener("input", updateNames);
+      canvas.addEventListener("click", spin);
+      spinBtn.addEventListener("click", spin);
+
+      updateNames();
+    </script>
+  </body>
+</html>
