@@ -31,10 +31,10 @@
       }
 
       header img.logo {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        margin-bottom: 10px;
+        /* margin-bottom: 10px; */
       }
 
       header h1 {
@@ -52,6 +52,7 @@
 
       #logo {
         display: flex;
+        align-items: center;
       }
       
       #main-container {
@@ -80,7 +81,6 @@
 
       canvas {
         border-radius: 50%;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
         cursor: pointer;
         transition: transform 0.3s;
         font-family: "Montserrat", sans-serif;
@@ -168,13 +168,61 @@
         box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
       }
 
-      #winner {
-        position: absolute;
-        bottom: 10px;
-        font-size: 28px;
+      #winnerPopup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #ffffff; /* Solid white background */
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+      #winnerPopup h2 {
+        font-size: 32px;
         font-weight: 700;
-        color: #00ff85;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        background: linear-gradient(90deg, #8a2be2, #ff69b4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4), 0 0 10px rgba(138, 43, 226, 0.5);
+        margin-bottom: 20px;
+      }
+
+      #winnerPopup .buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      #winnerPopup button {
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      #removeBtn {
+        background: linear-gradient(90deg, #ff4d4d, #e91e63);
+        color: #fff;
+      }
+
+      #closeBtn {
+        background: linear-gradient(90deg, #00b7eb, #00ddeb);
+        color: #fff;
+      }
+
+      #winnerPopup button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
       }
 
       footer {
@@ -194,6 +242,21 @@
       footer a:hover {
         text-decoration: underline;
       }
+
+      .blur-background {
+  filter: blur(5px);
+  transition: filter 0.3s ease;
+}
+
+#fireworksCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+  pointer-events: none;
+}
 
       @media (max-width: 768px) {
         #main-container {
@@ -224,8 +287,8 @@
         }
 
         #winner {
-          font-size: 20px;
-        }
+  font-size: 20px;
+}
       }
     </style>
   </head>
@@ -243,7 +306,6 @@
           <div id="arrow"></div>
           <canvas id="wheel" width="500" height="500"></canvas>
           <div id="centerText">Click to spin</div>
-          <div id="winner"></div>
         </div>
       </div>
       <div id="panel">
@@ -256,145 +318,271 @@ Dương
         <button id="spinBtn">Spin the Wheel</button>
       </div>
     </div>
+    <canvas id="fireworksCanvas"></canvas>
+    <div id="winnerPopup">
+      <h2 id="winnerText"></h2>
+      <div class="buttons">
+        <button id="removeBtn">Remove</button>
+        <button id="closeBtn">Close</button>
+      </div>
+    </div>
     <footer>
       <p>© 2025 Wheel of Names | <a href="#">Privacy</a> | <a href="#">How It Works</a> | <a href="#">Contact</a></p>
       <p>100% renewable energy servers</p>
     </footer>
 
     <script>
-      const canvas = document.getElementById("wheel");
-      const ctx = canvas.getContext("2d");
-      const namesInput = document.getElementById("names");
-      const winnerDiv = document.getElementById("winner");
-      const spinBtn = document.getElementById("spinBtn");
-      const centerText = document.getElementById("centerText");
-      const arrow = document.getElementById("arrow");
+  const canvas = document.getElementById("wheel");
+  const ctx = canvas.getContext("2d");
+  const namesInput = document.getElementById("names");
+  const spinBtn = document.getElementById("spinBtn");
+  const centerText = document.getElementById("centerText");
+  const arrow = document.getElementById("arrow");
+  const winnerPopup = document.getElementById("winnerPopup");
+  const winnerText = document.getElementById("winnerText");
+  const removeBtn = document.getElementById("removeBtn");
+  const closeBtn = document.getElementById("closeBtn");
+  const fireworksCanvas = document.getElementById("fireworksCanvas");
+  const fwCtx = fireworksCanvas.getContext("2d");
+  const header = document.querySelector("header");
+  const mainContainer = document.getElementById("main-container");
+  const footer = document.querySelector("footer");
 
-      let names = [];
-      let startAngle = 5;
-      let arc = 0;
-      let spinAngle = 0;
-      let spinTime = 0;
-      let spinTimeTotal = 0;
-      let spinning = false;
-      let targetAngle = 0;
-      let lastTime = null;
+  let names = [];
+  let startAngle = 4;
+  let arc = 0;
+  let spinAngle = 0;
+  let spinTime = 0;
+  let spinTimeTotal = 0;
+  let spinning = false;
+  let targetAngle = 0;
+  let lastTime = null;
+  let particles = [];
 
-      function updateNames() {
-        names = namesInput.value
-          .split("\n")
-          .map((n) => n.trim())
-          .filter((n) => n);
-        if (names.length === 0) names = ["No Name"];
-        arc = (Math.PI * 2) / names.length;
-        drawWheel();
-      }
+  // Resize fireworks canvas to full window
+  function resizeFireworksCanvas() {
+    fireworksCanvas.width = window.innerWidth;
+    fireworksCanvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeFireworksCanvas);
+  resizeFireworksCanvas();
 
-      function randomColor(i) {
-        const hue = (i * 360) / names.length;
-        return `hsl(${hue}, 80%, 50%)`;
-      }
+  // Fireworks particle class
+// Fireworks particle class
+class Particle {
+  constructor(x, y, hue) {
+    this.x = x;
+    this.y = y;
+    this.hue = hue; // Store hue separately
+    this.radius = Math.random() * 3 + 1; // Larger range: 1 to 4
+    this.vx = Math.random() * 6 - 3; // Wider velocity range: -3 to 3
+    this.vy = Math.random() * 6 - 3;
+    this.life = 200; // Increased from 100 to 200
+    this.maxLife = 200; // Store max life for opacity
+  }
 
-      function drawWheel() {
-        ctx.clearRect(0, 0, 500, 500);
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 3;
-        for (let i = 0; i < names.length; i++) {
-          const angle = startAngle + i * arc;
-          ctx.fillStyle = randomColor(i);
-          ctx.beginPath();
-          ctx.moveTo(250, 250);
-          ctx.arc(250, 250, 250, angle, angle + arc, false);
-          ctx.lineTo(250, 250);
-          ctx.fill();
-          ctx.stroke();
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.02; // Gravity
+    this.life -= 1;
+    this.radius *= 0.995; // Slower fade-out for trails
+  }
 
-          ctx.save();
-          ctx.translate(250, 250);
-          ctx.rotate(angle + arc / 2);
-          ctx.fillStyle = "#fff";
-          ctx.font = "bold 20px Montserrat";
-          ctx.textAlign = "right";
-          ctx.fillText(names[i], 230, 10);
-          ctx.restore();
-        }
-        ctx.beginPath();
-        ctx.arc(250, 250, 40, 0, 2 * Math.PI);
-        ctx.fillStyle = "#fff";
-        ctx.fill();
-      }
+  draw() {
+    // Glow effect: larger, semi-transparent circle
+    fwCtx.beginPath();
+    fwCtx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+    fwCtx.fillStyle = `hsla(${this.hue}, 90%, 70%, 0.2)`; // 20% opacity for glow
+    fwCtx.fill();
 
-      function colorArrow() {
-        const degrees = ((startAngle * 180) / Math.PI) % 360;
-        const arcd = (arc * 180) / Math.PI;
-        let index = Math.floor(((360 - degrees) % 360) / arcd);
-        if (index < 0) index += names.length;
-        arrow.style.borderLeftColor = randomColor(index);
-      }
+    // Main particle
+    fwCtx.beginPath();
+    fwCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    fwCtx.fillStyle = `hsla(${this.hue}, 90%, 70%, ${this.life / this.maxLife})`; // Fade opacity
+    fwCtx.fill();
+  }
+}
 
-      function rotateWheel(timestamp) {
-        if (!lastTime) lastTime = timestamp;
-        const delta = timestamp - lastTime;
-        lastTime = timestamp;
-        spinTime += delta;
+// Fireworks animation
+function createFireworks() {
+  const count = 100; // Increased from 30 to 100
+  const centerX = fireworksCanvas.width / 2;
+  const centerY = fireworksCanvas.height / 2;
+  for (let i = 0; i < count; i++) {
+    const hue = Math.random() * 360;
+    particles.push(new Particle(centerX, centerY, hue)); // Pass hue instead of full color
+  }
+}
 
-        if (spinTime >= spinTimeTotal) {
-          startAngle = targetAngle % (2 * Math.PI);
-          drawWheel();
-          colorArrow();
-          stopRotateWheel();
-          lastTime = null;
-          return;
-        }
+function animateFireworks() {
+  fwCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.update();
+    p.draw();
+  });
+  // Add new burst every 50 frames while popup is visible
+  if (particles.length > 0 || winnerPopup.style.display === "block") {
+    if (particles.length === 0) {
+      createFireworks(); // Create new burst
+    }
+    requestAnimationFrame(animateFireworks);
+  }
+}
 
-        const t = spinTime / spinTimeTotal;
-        const easeOut = 1 - Math.pow(1 - t, 3);
-        startAngle = spinAngle + easeOut * (targetAngle - spinAngle);
+  function toggleBlurBackground(enable) {
+    if (enable) {
+      header.classList.add("blur-background");
+      mainContainer.classList.add("blur-background");
+      footer.classList.add("blur-background");
+    } else {
+      header.classList.remove("blur-background");
+      mainContainer.classList.remove("blur-background");
+      footer.classList.remove("blur-background");
+    }
+  }
 
-        drawWheel();
-        colorArrow();
-        requestAnimationFrame(rotateWheel);
-      }
+  function updateNames() {
+    names = namesInput.value
+      .split("\n")
+      .map(n => n.trim())
+      .filter(n => n);
+    if (names.length === 0) names = ["No Name"];
+    arc = (Math.PI * 2) / names.length;
+    startAngle = -arc / 4; // Offset to point inside first segment
+    drawWheel();
+    colorArrow();
+  }
 
-      function stopRotateWheel() {
-        spinning = false;
-        startAngle = targetAngle % (2 * Math.PI);
-        const winnerName = names[1]; // Always select the first name
-        winnerDiv.textContent = `🎉 Winner: ${winnerName}`;
-        centerText.textContent = "Click to spin";
-        drawWheel();
-        colorArrow();
-      }
+  function randomColor(i) {
+    const hue = (i * 360) / names.length;
+    return `hsl(${hue}, 80%, 50%)`;
+  }
 
-      function spin() {
-        if (spinning) return;
-        spinning = true;
-        winnerDiv.textContent = "";
-        centerText.textContent = "";
-        spinTime = 0;
-        lastTime = null;
-        spinTimeTotal = 6000; // Fixed spin duration for consistency
-        spinAngle = startAngle;
+  function drawWheel() {
+    ctx.clearRect(0, 0, 500, 500);
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 3;
+    for (let i = 0; i < names.length; i++) {
+      const angle = startAngle + i * arc;
+      ctx.fillStyle = randomColor(i);
+      ctx.beginPath();
+      ctx.moveTo(250, 250);
+      ctx.arc(250, 250, 250, angle, angle + arc, false);
+      ctx.lineTo(250, 250);
+      ctx.fill();
+      ctx.stroke();
 
-        const index = 0; // Always stop at the first person
-        const arcCenter = arc / 2; // Center of the first segment (index 0)
+      ctx.save();
+      ctx.translate(250, 250);
+      ctx.rotate(angle + arc / 2);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 20px Poppins";
+      ctx.textAlign = "right";
+      ctx.fillText(names[i], 230, 10);
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.arc(250, 250, 40, 0, 2 * Math.PI);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+  }
 
-        // Arrow is at 0° (right side of the wheel)
-        const arrowAngle = 0;
-        const stopAt = arrowAngle - arcCenter;
+  function colorArrow() {
+    const degrees = ((startAngle * 180) / Math.PI) % 360;
+    const arcd = (arc * 180) / Math.PI;
+    let index = Math.floor(((360 - degrees) % 360) / arcd);
+    if (index < 0) index += names.length;
+    arrow.style.borderLeftColor = randomColor(index);
+  }
 
-        // Rotate 4 full rotations plus the stop position
-        const fullRotations = Math.PI * 2 * 4;
-        targetAngle = startAngle + fullRotations + stopAt;
+  function rotateWheel(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const delta = timestamp - lastTime;
+    lastTime = timestamp;
+    spinTime += delta;
 
-        requestAnimationFrame(rotateWheel);
-      }
+    if (spinTime >= spinTimeTotal) {
+      startAngle = targetAngle % (2 * Math.PI);
+      drawWheel();
+      colorArrow();
+      stopRotateWheel();
+      lastTime = null;
+      return;
+    }
 
-      namesInput.addEventListener("input", updateNames);
-      canvas.addEventListener("click", spin);
-      spinBtn.addEventListener("click", spin);
+    const t = spinTime / spinTimeTotal;
+    const easeOut = 1 - Math.pow(1 - t, 3);
+    startAngle = spinAngle + easeOut * (targetAngle - spinAngle);
 
-      updateNames();
-    </script>
+    drawWheel();
+    colorArrow();
+    requestAnimationFrame(rotateWheel);
+  }
+
+  function stopRotateWheel() {
+  spinning = false;
+  startAngle = targetAngle % (2 * Math.PI);
+  const winnerName = names[0];
+  winnerText.textContent = `🎉 Winner: ${winnerName}`;
+  winnerPopup.style.display = "block";
+  toggleBlurBackground(true);
+  createFireworks(); // Initial burst
+  animateFireworks();
+  centerText.textContent = "Click to spin";
+  drawWheel();
+  colorArrow();
+}
+
+  function spin() {
+  if (spinning) return;
+  spinning = true;
+  winnerPopup.style.display = "none";
+  toggleBlurBackground(false);
+  particles = [];
+  fwCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+  centerText.textContent = "";
+  spinTime = 0;
+  lastTime = null;
+  spinTimeTotal = 8000; // Increased from 6000ms to 8000ms
+  spinAngle = startAngle;
+
+  const index = 0;
+  const arcCenter = arc / 3;
+  const arrowAngle = 0;
+  const stopAt = arrowAngle - arcCenter;
+  const fullRotations = Math.PI * 2 * 10;
+  targetAngle = startAngle + fullRotations + stopAt;
+
+  requestAnimationFrame(rotateWheel);
+}
+
+  // Remove button: Remove winner and reset
+  removeBtn.addEventListener("click", () => {
+    names.shift();
+    namesInput.value = names.join("\n");
+    winnerPopup.style.display = "none";
+    toggleBlurBackground(false);
+    particles = [];
+    fwCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+    updateNames();
+  });
+
+  // Close button: Close popup and reset
+  closeBtn.addEventListener("click", () => {
+    winnerPopup.style.display = "none";
+    toggleBlurBackground(false);
+    particles = [];
+    fwCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+    // updateNames();
+  });
+
+  namesInput.addEventListener("input", updateNames);
+  canvas.addEventListener("click", spin);
+  spinBtn.addEventListener("click", spin);
+
+  updateNames();
+</script>
   </body>
 </html>
